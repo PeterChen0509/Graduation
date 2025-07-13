@@ -1,159 +1,95 @@
 import torch
 import numpy as np
-import aiohttp
-import asyncio
-import base64
-import io
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_random_exponential,
-)
-from openai import OpenAI
-
-from utils.video_utils import video_frame_generator
+from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+from qwen_vl_utils import process_vision_info
 
 class Answerer(torch.nn.Module):
-    def __init__(self, api_key):
+    def __init__(self, model_name="Qwen/Qwen2.5-VL-7B-Instruct"):
         super(Answerer, self).__init__()
-        self.api_key = api_key
-        # Load VQA model
-        # config_path = './mPLUG/configs_video/VideoQA_msrvtt_large.yaml'
-        # checkpoint_path = './mPLUG2_MSRVTT_QA.pth'
-        # video_qa_model = VideoQAModel(config_path, checkpoint_path)
-
-        # Load VQA model-> BLIP2 + ChatGPT3.5
+        # Load VQA model-> Qwen 2.5 VL
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-
-        self.vqa_model = "gpt-4o"
-        self.vqa_sys_prompt = {
-        "role": "system",
-        "content": """
-        You are a helpful assistant that answer the question with details. Don't jsut answer is yes or no. Provide more details(about facts) about the image that might help the questioner.
-        """,
-        }
-
-        self.vqa_sys_prompt_language_only = {
-        "role": "system",
-        "content": """
-        You are a helpful assistant that answer the question with details. Don't jsut answer is yes or no. Provide more details(about facts) about the image that might help the questioner.
-        """,
-        }
-
-        self.system_prompt = {
-        "role": "system",
-        "content": """
-        The VQA model is designed to answer questions based on images. 
-To apply it to videos, frames are uniformly extracted from the video over time, and the model provides an answer for each frame to a given question. This means that for a single question, there will be multiple answers - one for each extracted frame. Your role is to review all of the individual answers and summarize them to provide a final answer to the original question. When making final answer, don't user unnecessary words like 'Based on the individual answers provided by the VQA model,'. Just answer to the question.
-
-For example, if the question is "Did a cookie appear in the video?" and the individual answers from the frames are ["No", "No", "Yes", "No"],  then since a cookie appeared in the 3rd frame, you should summarize and answer the question as "Yes". Length of aggregated answer should be around 30~35 words.""",
-        } 
         
-        self.model = "gpt-4o" # "gpt-4-1106-preview" "gpt-3.5-turbo-16k"
-        self.client = OpenAI(api_key=self.api_key)
-        self.images = []
-        self.topk = []
-
-    def load_topk(self, topk):
-        self.topk = topk
+        # Load Qwen 2.5 VL model and processor
+        self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+            model_name,
+            torch_dtype="auto",
+            device_map="auto"
+        )
+        self.processor = AutoProcessor.from_pretrained(
+            model_name,
+            use_fast=True  # 使用快速处理器避免警告
+        )
+        
+        self.video_path = None
 
     def load_video(self, video_path):
-        self.images = [] 
-        for frame in video_frame_generator(video_path, resize_factor=1.0, skip_second=1):
-            self.images.append(frame)
-        self.images = [self.encode_image(img) for img in self.images]
-
-    def encode_image(self, image):
-        img_byte_arr = io.BytesIO()
-        image.save(img_byte_arr, format='PNG')
-        img_byte_arr = img_byte_arr.getvalue()
-        return base64.b64encode(img_byte_arr).decode("utf-8")
+        """Load video path for processing"""
+        self.video_path = video_path
 
     def ask(self, question):
-        # for image in images:
+        """Ask question about the video using Qwen 2.5 VL"""
         print("Asking..")
-
-        answers = []
-        for img in self.images:
-            response = self.client.chat.completions.create(
-            model=self.vqa_model,
-            messages=[
-                self.vqa_sys_prompt,
-                {"role": "user", "content": [
+        
+        if not self.video_path:
+            raise ValueError("No video loaded. Call load_video() first.")
+        
+        # Prepare messages for Qwen 2.5 VL with video
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "video",
+                        "video": f"{self.video_path}",
+                        "fps": 1.0,  # Extract 1 frame per second
+                    },
                     {"type": "text", "text": question},
-                    {"type": "image_url", "image_url": {
-                        "url": f"data:image/png;base64,{img}"}
-                    }
-                ]}
-            ],
-            max_tokens=50,
-            temperature=0.3,
+                ],
+            }
+        ]
+        
+        # Process inputs
+        text = self.processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        image_inputs, video_inputs, video_kwargs = process_vision_info(messages, return_video_kwargs=True)
+        # Remove fps from video_kwargs if it exists to avoid duplicate argument
+        if 'fps' in video_kwargs:
+            del video_kwargs['fps']
+            
+        inputs = self.processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            fps=1.0,
+            padding=True,
+            return_tensors="pt",
+            **video_kwargs,
+        )
+        inputs = inputs.to(self.device)
+
+        # Generate response
+        with torch.no_grad():
+            generated_ids = self.model.generate(
+                **inputs, 
+                max_new_tokens=100,
+                do_sample=True,
+                temperature=0.3
             )
-            answers.append(response.choices[0].message.content)
-
-        ans = self.aggregate(question, answers)
-
-        return ans, answers
+        
+        generated_ids_trimmed = [
+            out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        answer = self.processor.batch_decode(
+            generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+        )[0]
+        
+        # For compatibility, return answer as both aggregated and individual
+        return answer, [answer]
     
     async def async_ask(self, question):
-        @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(3))
-        async def fetch_answer(session, question, img):
-            payload = {
-                "model": self.vqa_model,
-                "messages": [
-                    self.vqa_sys_prompt,
-                    {
-                        "role": "user", 
-                        "content": [
-                            {"type": "text", "text": question},
-                            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img}"}}
-                        ]
-                    }
-                ],
-                "max_tokens": 50,
-                "temperature": 0.3,
-            }
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_key}"  # Add your API key here
-            }
-            async with session.post("https://api.openai.com/v1/chat/completions", json=payload, headers=headers) as response:
-                response_json = await response.json()
-                try:
-                    return response_json["choices"][0]["message"]["content"]
-                except:
-                    return " "
-
-        answers = None
-        async with aiohttp.ClientSession() as session:
-            try:
-                tasks = [fetch_answer(session, question, img) for img in self.images]
-                answers = await asyncio.gather(*tasks)
-            except:
-                print("Answer failed..")   # request error
-                
-            if answers!=None:
-                ans, perplexity = self.aggregate(question, answers)
-            else: 
-                ans = "no answer available"
-                answers = ["no answer available", "no answer available", "no answer available"]
-                perplexity = 9
-        # we did not used perplexity in the experiment
-        return ans, answers #, perplexity 
-    
-    def aggregate(self, question, answers):
-        aggregation_prompt = {"role": "user", "content": f""" 
-            Question: {question}\n
-            VQA answers: {answers}\n
-            Agregated Answer: 
-            """}
-        messages = [self.system_prompt, aggregation_prompt]
-        
-        completion = self.client.chat.completions.create(
-            model=self.model, messages=messages, max_tokens=100, stream=False, temperature=0.5,
-            logprobs=True
-        )
-        response = completion.choices[0].message.content
-        logprobs = [item.logprob for item in completion.choices[0].logprobs.content]
-        perplexity = np.exp(-np.sum(logprobs) / len(logprobs))
-        return response, perplexity
+        """Async version of ask - for compatibility, but runs synchronously for local model"""
+        # For local models, async doesn't provide performance benefits
+        # We run synchronously but maintain async interface for compatibility
+        answer, _ = self.ask(question)
+        return answer, None  # 返回 None 作为 before_aggr，因为我们不再需要按帧处理

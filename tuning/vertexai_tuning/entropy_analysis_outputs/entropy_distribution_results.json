@@ -1,0 +1,452 @@
+[
+  {
+    "Query_ID":"Sample_001",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.010193211,
+    "Calculated_Intra_Cluster_Entropy":0.0052153714,
+    "query_video":"sample_00003239",
+    "query_caption":"In the video, the screen shows a man using a cellphone to make a call indoors."
+  },
+  {
+    "Query_ID":"Sample_002",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.010972163,
+    "Calculated_Intra_Cluster_Entropy":0.0102881914,
+    "query_video":"sample_00000499",
+    "query_caption":"In the video, we see a character standing in a lush environment, wearing military uniform, with a sm..."
+  },
+  {
+    "Query_ID":"Sample_003",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0101885326,
+    "Calculated_Intra_Cluster_Entropy":0.0072038823,
+    "query_video":"sample_00000153",
+    "query_caption":"Input: In the video, at the beginning of the video, we see a lady with a smile on her face, her mout..."
+  },
+  {
+    "Query_ID":"Sample_004",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0105668494,
+    "Calculated_Intra_Cluster_Entropy":0.0049735716,
+    "query_video":"sample_00001175",
+    "query_caption":"In the video, the scene shows a woman sitting indoors, appearing to be in a restaurant or caf\u00e9."
+  },
+  {
+    "Query_ID":"Sample_005",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0111121092,
+    "Calculated_Intra_Cluster_Entropy":0.0081986609,
+    "query_video":"sample_00001074",
+    "query_caption":"In the video, the screen shows a man sitting opposite a woman in an indoor setting."
+  },
+  {
+    "Query_ID":"Sample_006",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0168189182,
+    "Calculated_Intra_Cluster_Entropy":0.0025196544,
+    "query_video":"sample_00001000",
+    "query_caption":"In the video, the screen shows a man wearing a white coat and a tie, presumably a doctor."
+  },
+  {
+    "Query_ID":"Sample_007",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0101550006,
+    "Calculated_Intra_Cluster_Entropy":0.0076371426,
+    "query_video":"sample_00000602",
+    "query_caption":"In the video, this segment shows a close-up shot of a male character engaged in a conversation with ..."
+  },
+  {
+    "Query_ID":"Sample_008",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0057512135,
+    "Calculated_Intra_Cluster_Entropy":0.0065511595,
+    "query_video":"sample_00000444",
+    "query_caption":"Input: In the video, at the beginning, we see a lady whose facial expression appears very happy and ..."
+  },
+  {
+    "Query_ID":"Sample_009",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0098228909,
+    "Calculated_Intra_Cluster_Entropy":0.0080772138,
+    "query_video":"sample_00002339",
+    "query_caption":"In the video, the scene shows two individuals in a dimly lit indoor environment."
+  },
+  {
+    "Query_ID":"Sample_010",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0068810573,
+    "Calculated_Intra_Cluster_Entropy":0.0076927269,
+    "query_video":"sample_00000385",
+    "query_caption":"Input: In the video, in the opening scene, we see a character inside a store with products on the sh..."
+  },
+  {
+    "Query_ID":"Sample_011",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0043337789,
+    "Calculated_Intra_Cluster_Entropy":0.0049242113,
+    "query_video":"sample_00002565",
+    "query_caption":"In the video, the screen shows a male character wearing a black shirt, with a luxurious indoor envir..."
+  },
+  {
+    "Query_ID":"Sample_012",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0061233796,
+    "Calculated_Intra_Cluster_Entropy":0.0046576539,
+    "query_video":"sample_00001762",
+    "query_caption":"Input: In the video, we see a male character sitting in an indoor environment with a whiteboard and ..."
+  },
+  {
+    "Query_ID":"Sample_013",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0113901205,
+    "Calculated_Intra_Cluster_Entropy":0.0073610565,
+    "query_video":"sample_00000203",
+    "query_caption":"Input: In the video, at the beginning of the video, we see a female character sitting indoors."
+  },
+  {
+    "Query_ID":"Sample_014",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0058889583,
+    "Calculated_Intra_Cluster_Entropy":0.0061578457,
+    "query_video":"sample_00000176",
+    "query_caption":"Input: In the video, it is impossible to determine the characters' emotional state; in the audio, it..."
+  },
+  {
+    "Query_ID":"Sample_015",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0085745407,
+    "Calculated_Intra_Cluster_Entropy":0.0057540215,
+    "query_video":"sample_00000406",
+    "query_caption":"In the video, the screen shows a woman sitting indoors."
+  },
+  {
+    "Query_ID":"Sample_016",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.008712914,
+    "Calculated_Intra_Cluster_Entropy":0.0081770601,
+    "query_video":"sample_00000972",
+    "query_caption":"In the video, in the opening scene, we see a female character with a serious facial expression, tigh..."
+  },
+  {
+    "Query_ID":"Sample_017",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0109398263,
+    "Calculated_Intra_Cluster_Entropy":0.0126511572,
+    "query_video":"sample_00001043",
+    "query_caption":"In the video, we see a female character having a conversation with a male character."
+  },
+  {
+    "Query_ID":"Sample_018",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0081560141,
+    "Calculated_Intra_Cluster_Entropy":0.0085160428,
+    "query_video":"sample_00002187",
+    "query_caption":"Input: In the video, the frame includes a woman and a man."
+  },
+  {
+    "Query_ID":"Sample_019",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0111497739,
+    "Calculated_Intra_Cluster_Entropy":0.0055351554,
+    "query_video":"sample_00002783",
+    "query_caption":"In the video, the scene shows a woman sitting indoors."
+  },
+  {
+    "Query_ID":"Sample_020",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0060591168,
+    "Calculated_Intra_Cluster_Entropy":0.0062249391,
+    "query_video":"sample_00000166",
+    "query_caption":"In the video, the screen shows a man leaning slightly forward, which may indicate that he is paying ..."
+  },
+  {
+    "Query_ID":"Sample_021",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0099835602,
+    "Calculated_Intra_Cluster_Entropy":0.008466834,
+    "query_video":"sample_00002449",
+    "query_caption":"In the video, the screen shows a woman wearing a star-patterned outfit."
+  },
+  {
+    "Query_ID":"Sample_022",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0043425788,
+    "Calculated_Intra_Cluster_Entropy":0.0043643724,
+    "query_video":"sample_00000881",
+    "query_caption":"In the video, the screen shows a woman indoors."
+  },
+  {
+    "Query_ID":"Sample_023",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0056655919,
+    "Calculated_Intra_Cluster_Entropy":0.0084682642,
+    "query_video":"sample_00001756",
+    "query_caption":"Input: In the video, the screen shows a female character looking attentively at the male on the left..."
+  },
+  {
+    "Query_ID":"Sample_024",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0104993469,
+    "Calculated_Intra_Cluster_Entropy":0.0065219727,
+    "query_video":"sample_00000980",
+    "query_caption":"In the video, we see a male character with a smile on his face, gentle eyes, and the corners of his ..."
+  },
+  {
+    "Query_ID":"Sample_025",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0126169466,
+    "Calculated_Intra_Cluster_Entropy":0.0111274769,
+    "query_video":"sample_00001846",
+    "query_caption":"In the video, the screen shows a female character."
+  },
+  {
+    "Query_ID":"Sample_026",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.009262383,
+    "Calculated_Intra_Cluster_Entropy":0.0091111217,
+    "query_video":"sample_00002563",
+    "query_caption":"In the video, the screen shows a man inside a store."
+  },
+  {
+    "Query_ID":"Sample_027",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0043448342,
+    "Calculated_Intra_Cluster_Entropy":0.0073870727,
+    "query_video":"sample_00001178",
+    "query_caption":"Input: In the video, at the beginning of the video, we see three people sitting together."
+  },
+  {
+    "Query_ID":"Sample_028",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0070638527,
+    "Calculated_Intra_Cluster_Entropy":0.006441675,
+    "query_video":"sample_00000033",
+    "query_caption":"In the video, the screen shows a close-up shot of a male."
+  },
+  {
+    "Query_ID":"Sample_029",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0104729791,
+    "Calculated_Intra_Cluster_Entropy":0.0061356794,
+    "query_video":"sample_00000665",
+    "query_caption":"In the video, in the opening scene, we see a male character with a slightly melancholic expression."
+  },
+  {
+    "Query_ID":"Sample_030",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0068112981,
+    "Calculated_Intra_Cluster_Entropy":0.0096780748,
+    "query_video":"sample_00001393",
+    "query_caption":"Input: In the video, the frame contains two characters, with the character on the left facing the ca..."
+  },
+  {
+    "Query_ID":"Sample_031",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0131687818,
+    "Calculated_Intra_Cluster_Entropy":0.0086584905,
+    "query_video":"sample_00000648",
+    "query_caption":"In the video, we see a woman with expressive mouth movements, seemingly expressing her views or emot..."
+  },
+  {
+    "Query_ID":"Sample_032",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0070029191,
+    "Calculated_Intra_Cluster_Entropy":0.005931174,
+    "query_video":"sample_00000960",
+    "query_caption":"Input: In the video, at the beginning of the video, we see a male character with a serious facial ex..."
+  },
+  {
+    "Query_ID":"Sample_033",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0071195207,
+    "Calculated_Intra_Cluster_Entropy":0.0075946265,
+    "query_video":"sample_00001383",
+    "query_caption":"In the video, we see a woman with a slight upward curve at the corner of her mouth, wearing a smile,..."
+  },
+  {
+    "Query_ID":"Sample_034",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0067140407,
+    "Calculated_Intra_Cluster_Entropy":0.0058200706,
+    "query_video":"sample_00001614",
+    "query_caption":"In the video, the screen shows a female character with an indoor background."
+  },
+  {
+    "Query_ID":"Sample_035",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0090078161,
+    "Calculated_Intra_Cluster_Entropy":0.0053815012,
+    "query_video":"sample_00000420",
+    "query_caption":"In the video, in the opening scene, we see a woman sitting indoors with bright windows and green pla..."
+  },
+  {
+    "Query_ID":"Sample_036",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0128372554,
+    "Calculated_Intra_Cluster_Entropy":0.0078721787,
+    "query_video":"sample_00001455",
+    "query_caption":"In the video, the screen shows a female character standing in front of a dim background, with a micr..."
+  },
+  {
+    "Query_ID":"Sample_037",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0134537931,
+    "Calculated_Intra_Cluster_Entropy":0.0067722607,
+    "query_video":"sample_00001416",
+    "query_caption":"Input: In the video, the left lady (wearing an apron) and the right lady (wearing a green shirt) are..."
+  },
+  {
+    "Query_ID":"Sample_038",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0153832109,
+    "Calculated_Intra_Cluster_Entropy":0.0088901464,
+    "query_video":"sample_00002785",
+    "query_caption":"In the video, the screen shows a man sitting in a luxuriously decorated environment."
+  },
+  {
+    "Query_ID":"Sample_039",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0075860869,
+    "Calculated_Intra_Cluster_Entropy":0.0090179645,
+    "query_video":"sample_00001142",
+    "query_caption":"In the video, the character is wearing a police uniform, with a furrowed brow and slightly downturne..."
+  },
+  {
+    "Query_ID":"Sample_040",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0071571728,
+    "Calculated_Intra_Cluster_Entropy":0.0063657737,
+    "query_video":"sample_00000220",
+    "query_caption":"Input: In the video, the screen shows a male character in an indoor setting."
+  },
+  {
+    "Query_ID":"Sample_041",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0032659093,
+    "Calculated_Intra_Cluster_Entropy":0.0064015334,
+    "query_video":"sample_00001921",
+    "query_caption":"In the video, the screen shows a woman sitting in the driver's seat of a car, and she is using her p..."
+  },
+  {
+    "Query_ID":"Sample_042",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0079988763,
+    "Calculated_Intra_Cluster_Entropy":0.0056852791,
+    "query_video":"sample_00002311",
+    "query_caption":"In the video, the screen shows a man wearing a suit and a black bow tie, standing in a studio simila..."
+  },
+  {
+    "Query_ID":"Sample_043",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.007365652,
+    "Calculated_Intra_Cluster_Entropy":0.0052225413,
+    "query_video":"sample_00000529",
+    "query_caption":"In the video, it is difficult to determine the emotional state of the person."
+  },
+  {
+    "Query_ID":"Sample_044",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0116724537,
+    "Calculated_Intra_Cluster_Entropy":0.0076936468,
+    "query_video":"sample_00001589",
+    "query_caption":"In the video, the screen shows a female character whose facial expression appears very painful."
+  },
+  {
+    "Query_ID":"Sample_045",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0089401222,
+    "Calculated_Intra_Cluster_Entropy":0.0068333886,
+    "query_video":"sample_00000363",
+    "query_caption":"Input: In the video, the screen shows a female character in an indoor setting."
+  },
+  {
+    "Query_ID":"Sample_046",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.007617435,
+    "Calculated_Intra_Cluster_Entropy":0.0063308524,
+    "query_video":"sample_00002394",
+    "query_caption":"Input: In the video, the screen shows a male character, with a blurred background, but it can be see..."
+  },
+  {
+    "Query_ID":"Sample_047",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0129116486,
+    "Calculated_Intra_Cluster_Entropy":0.0105309429,
+    "query_video":"sample_00001215",
+    "query_caption":"In the video, the screen shows a female character."
+  },
+  {
+    "Query_ID":"Sample_048",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0091548919,
+    "Calculated_Intra_Cluster_Entropy":0.0026075774,
+    "query_video":"sample_00003116",
+    "query_caption":"In the video, the scene shows a person lying on a bed, dressed in what appears to be a patient gown,..."
+  },
+  {
+    "Query_ID":"Sample_049",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.006443697,
+    "Calculated_Intra_Cluster_Entropy":0.0122871972,
+    "query_video":"sample_00003025",
+    "query_caption":"In the video, the scene shows a male character wearing a police uniform and a female character in ca..."
+  },
+  {
+    "Query_ID":"Sample_050",
+    "k":33,
+    "m":8,
+    "Calculated_Inter_Cluster_Entropy":0.0100312427,
+    "Calculated_Intra_Cluster_Entropy":0.0076987471,
+    "query_video":"sample_00001492",
+    "query_caption":"Input: In the video, the frame includes a man on the right side (facing the camera) and a man on the..."
+  }
+]

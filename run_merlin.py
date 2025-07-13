@@ -9,6 +9,38 @@ import sys
 import argparse
 from sklearn.metrics.pairwise import cosine_similarity
 
+# Fix for PyTorch 2.7.0 compatibility with older libraries
+import torch
+if not hasattr(torch, "compiler"):
+    import types
+    torch.compiler = types.SimpleNamespace()
+    torch.compiler.is_compiling = lambda: False
+elif not hasattr(torch.compiler, "is_compiling"):
+    torch.compiler.is_compiling = lambda: False
+
+# Additional fixes for PyTorch 2.7.0 compatibility
+if hasattr(torch, 'compiler'):
+    # Add any missing attributes that might be accessed
+    if not hasattr(torch.compiler, 'compile'):
+        torch.compiler.compile = lambda *args, **kwargs: args[0] if args else lambda x: x
+    if not hasattr(torch.compiler, 'is_compiling'):
+        torch.compiler.is_compiling = lambda: False
+
+# Global monkey patch for any torch.compiler issues
+import sys
+import types
+
+def create_torch_compiler_patch():
+    """Create a comprehensive torch.compiler patch"""
+    compiler_module = types.SimpleNamespace()
+    compiler_module.is_compiling = lambda: False
+    compiler_module.compile = lambda *args, **kwargs: args[0] if args else lambda x: x
+    return compiler_module
+
+# Apply the patch globally
+if not hasattr(torch, 'compiler') or not hasattr(torch.compiler, 'is_compiling'):
+    torch.compiler = create_torch_compiler_patch()
+
 from utils.data_utils import prepare_data, DATASET_CONFIGS, DatasetPaths
 from utils.video_utils import video_frame_generator
 from utils.logger import logger, setup_logger
@@ -30,7 +62,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dataset",
         type=str,
-        choices=["msvd", "msrvtt", "anet"],
+        choices=["mafw", "mer2024"],
         required=True,
         help="Dataset to process"
     )
@@ -40,6 +72,21 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default="data",
         help="Path to dataset directory"
+    )
+    
+    # Excel file arguments (for MAFW/MER2024 dataset)
+    parser.add_argument(
+        "--excel_path",
+        type=str,
+        default="/home/peterchen/M2/MER2024/llava_next_video_caption.xlsx",
+        help="Path to Excel file (for MAFW/MER2024 dataset)"
+    )
+    
+    parser.add_argument(
+        "--video_base_dir",
+        type=str,
+        default="/home/peterchen/M2/MER2024/video-selected",
+        help="Base directory for video files (for MAFW/MER2024 dataset)"
     )
     
     # Model configuration (can be overridden from .env)
@@ -81,7 +128,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--env_file",
         type=str,
-        default=".env.local",
+        default="/home/peterchen/M2/ADEPT/.env",
         help="Path to .env file"
     )
     
@@ -120,13 +167,9 @@ def setup_environment(args: argparse.Namespace) -> None:
     
     # Set up model configuration from environment if not provided in args
     if not args.model_name:
-        args.model_name = get_optional_env("MODEL_NAME", "gpt-4-vision-preview")
+        args.model_name = get_optional_env("MODEL_NAME", "Qwen/Qwen2.5-VL-7B-Instruct")
     if not args.max_tokens:
         args.max_tokens = int(get_optional_env("MAX_TOKENS", "300"))
-    
-    # Get required API key from environment
-    api_key = get_required_env("OPENAI_API_KEY")
-    os.environ["OPENAI_API_KEY"] = api_key
     
     # Set up Google Cloud configuration
     os.environ["GOOGLE_CLOUD_PROJECT_ID"] = get_required_env("GOOGLE_CLOUD_PROJECT_ID")
@@ -154,20 +197,37 @@ def main() -> None:
         video_ext = dataset_config.video_ext
         
         # Load dataset
-        queries, video_captions, video_embs, text_embs = prepare_data(
-            dataset=args.dataset,
-            video_path=args.data_path,
-            caption=os.path.join(args.data_path, "gpt4o_caption")
-        )
+        if args.dataset in ["mafw", "mer2024"]:
+            queries, video_captions, video_embs, text_embs = prepare_data(
+                dataset=args.dataset,
+                video_path=args.data_path,
+                caption=os.path.join(args.data_path, "gpt4o_caption"),
+                excel_path=args.excel_path,
+                video_base_dir=args.video_base_dir
+            )
+        else:
+            queries, video_captions, video_embs, text_embs = prepare_data(
+                dataset=args.dataset,
+                video_path=args.data_path,
+                caption=os.path.join(args.data_path, "gpt4o_caption")
+            )
         
         # Set up other paths
         video_caption_path = f"{args.data_path}/gpt4o_caption"
         embedding_base_path = f"{args.data_path}/"
         base_chat_log_dir = f"{args.output_dir}/chatlog_rerank_{args.dataset}"
+        
+        # 显示输出目录的实际路径
+        logger.info(f"当前工作目录: {os.getcwd()}")
+        logger.info(f"输出目录: {os.path.abspath(args.output_dir)}")
+        logger.info(f"聊天日志目录: {os.path.abspath(base_chat_log_dir)}")
 
-        # Retrieve top-5 video candidates based on cosine similarity
-        logger.info("Zero-shot retrieval evaluation...")
-        top_k = 10
+        # Retrieve top-k video candidates based on cosine similarity
+        # Set top_k to 10% of dataset size, rounded to nearest integer
+        total_videos = len(video_embs)
+        top_k = max(1, round(total_videos * 0.1))  # At least 1, rounded to nearest integer
+        logger.info(f"Zero-shot retrieval evaluation...")
+        logger.info(f"Dataset size: {total_videos}, Top-k set to: {top_k} (10% of dataset)")
         predictions = []
 
         for i, query_text_emb in tqdm(enumerate(text_embs)):
@@ -211,7 +271,7 @@ def main() -> None:
         zs_top5_acc = 0
         zs_top10_acc = 0
 
-        vqa = Answerer(os.environ["OPENAI_API_KEY"])
+        vqa = Answerer()
         reranker = Reranker(
             project_id=os.environ["GOOGLE_CLOUD_PROJECT_ID"],
             location=os.environ["GOOGLE_CLOUD_LOCATION"],
@@ -221,12 +281,25 @@ def main() -> None:
         )
         
         # Initialize the Questioner with the number of rounds from args
+        # 使用调优得到的最佳参数组合
         questioner = Questioner(
-            api_key=os.environ["OPENAI_API_KEY"]
+            n_clusters=4,        # m=4 (MER2024调优结果)
+            alpha_threshold=0.006, # α=0.006 (MER2024调优结果)
+            beta_threshold=0.007   # β=0.007 (MER2024调优结果)
         )
         
+        logger.info("🎯 使用调优得到的最佳参数组合:")
+        logger.info(f"   K-means簇数 (m): 4")
+        logger.info(f"   簇间熵阈值 (α): 0.006")
+        logger.info(f"   簇内熵阈值 (β): 0.007")
+        logger.info(f"   交互轮数: {args.num_rounds}")
+        
         # iterate with query
-        for row in predictions:
+        # 处理全部数据
+        max_videos = len(predictions)
+        logger.info(f"📊 开始处理全部 {max_videos} 个视频")
+        
+        for idx, row in enumerate(predictions):
             record = {}
             rank_history = []
             
@@ -235,51 +308,11 @@ def main() -> None:
             target_vid = row["query_id"]
             topk = row["org_ranking"]
             
-            logger.info(f"Processing target video: {target_vid}")
+            logger.info(f"🎬 处理视频 {idx+1}/{max_videos}: {target_vid}")
             logger.debug(f"Top-k videos: {topk}")
             
-            if os.path.isfile(os.path.join(base_chat_log_dir, f'log_{target_vid}.json')):
-                with open(os.path.join(base_chat_log_dir, f'log_{target_vid}.json'), 'r') as f:
-                    pred = json.load(f)
-                try:
-                    r0 = pred['initial_rank']
-                    r1 = pred['round1']['target_rank']
-                    r2 = pred['round2']['target_rank']
-                    r3 = pred['round3']['target_rank']
-                    r4 = pred['round4']['target_rank']
-                    r5 = pred['round5']['target_rank']
-                    rank_history = [r0, r1, r2, r3, r4, r5]
-                    logger.debug(f"Rank history: {rank_history}")
-                    for _idx, r in enumerate(rank_history):
-                        rank_sum[_idx]+=r
-                        logger.info(f"Average ranking in round {_idx}: {round(rank_sum[_idx]/total, 1)} among {total} samples")
-
-                    # topk
-                    if r5==1:
-                        top1_acc += 1
-                    if r5<=5:
-                        top5_acc += 1
-                    if r5<=10:
-                        top10_acc += 1
-                    
-                    ## zs retrieval ##
-                    ranking = row["org_ranking"]
-                    if target_vid == ranking[0]:
-                        zs_top1_acc += 1
-                    if target_vid in ranking[:5]:
-                        zs_top5_acc += 1
-                    if target_vid in ranking[:10]:
-                        zs_top10_acc += 1
-
-                    logger.info(f"Top-1 accuracy: {top1_acc / total * 100:.2f}% ({zs_top1_acc}->{top1_acc})/{total}")
-                    logger.info(f"Top-5 accuracy: {top5_acc / total * 100:.2f}% ({zs_top5_acc}->{top5_acc})/{total}")
-                    logger.info(f"Top-10 accuracy: {top10_acc / total * 100:.2f}% ({zs_top10_acc}->{top10_acc})/{total}")
-
-                except Exception as e:
-                    logger.error(f"Failed to process video {target_vid}: {str(e)}")
-                    cannot_check.append(target_vid)
-                    total-=1
-                continue
+            # 每次都重新运行，不跳过已存在的文件
+            # 如果文件已存在，直接覆盖
             
             # Load videos for VQA
             logger.info("Loading videos for VQA...")
@@ -306,10 +339,8 @@ def main() -> None:
                                 topk_video_paths.append(fallback_path)
                                 break
                 
-                # Load top-k videos
-                if topk_video_paths:
-                    vqa.load_topk(topk_video_paths)
-                else:
+                # Load top-k videos (no longer needed since we removed load_topk method)
+                if not topk_video_paths:
                     logger.warning(f"No top-k videos found for {target_vid}")
             
             except Exception as e:
@@ -328,7 +359,28 @@ def main() -> None:
                     pass
 
             reranker.init_embedding(target_vid)
-            _, initial_rank = reranker.rerank(target_vid, video_embs)
+            # 修复：为初始排名计算提供查询嵌入
+            # 找到当前视频在text_embs中的索引
+            current_video_idx = None
+            for query_idx, query in enumerate(queries):
+                # 根据数据集类型处理视频ID
+                if args.dataset == "mer2024":
+                    # MER2024: 直接使用name作为video_id，不需要去除扩展名
+                    if query["video"] == target_vid:
+                        current_video_idx = query_idx
+                        break
+                else:
+                    # MAFW: 需要去除扩展名
+                    if query["video"].replace(video_ext, "") == target_vid:
+                        current_video_idx = query_idx
+                        break
+            
+            if current_video_idx is not None:
+                initial_query_emb = text_embs[current_video_idx]  # 使用当前查询的文本嵌入
+                _, initial_rank = reranker.rerank(target_vid, video_embs, initial_query_emb)
+            else:
+                logger.error(f"Could not find text embedding for video {target_vid}")
+                continue
             logger.info(f"Initial rank: {initial_rank}")
             
             # On experiment, we did not use this condition
@@ -340,11 +392,11 @@ def main() -> None:
             #     total-=1
             #     continue
 
-            # record
-            record['target_vid'] = target_vid
-            record['topk_candidates'] = topk
-            record['anchor_caption'] = anchor_captions
-            record['initial_rank'] = int(initial_rank)  # numpy int object cannot be dumped to json object
+            # 初始化记录结构
+            record = {
+                'video_name': target_vid,  # 目标视频的id/name
+                'initial_rank': int(initial_rank),  # 初始排名
+            }
             rank_history.append(initial_rank)
             
             # Reset the questioner for a new conversation
@@ -352,30 +404,117 @@ def main() -> None:
                 target_video_id=target_vid
             )
             
-            # Generate the first question using the Questioner
+            # Reset the reformatter with initial description
+            reranker.reset_reformatter(initial_description=anchor_captions)
+            
+            # Get embeddings for top-k candidates for entropy analysis
+            topk_embeddings = []
+            for vid in topk:
+                try:
+                    # Find the index of the video in the queries list
+                    vid_index = None
+                    for query_idx, query in enumerate(queries):
+                        # 根据数据集类型处理视频ID
+                        if args.dataset == "mer2024":
+                            # MER2024: 直接使用name作为video_id，不需要去除扩展名
+                            if query["video"] == vid:
+                                vid_index = query_idx
+                                break
+                        else:
+                            # MAFW: 需要去除扩展名
+                            if query["video"].replace(video_ext, "") == vid:
+                                vid_index = query_idx
+                                break
+                    
+                    if vid_index is not None:
+                        topk_embeddings.append(video_embs[vid_index])
+                    else:
+                        logger.warning(f"Could not find embeddings for video {vid}")
+                except Exception as e:
+                    logger.warning(f"Error getting embeddings for video {vid}: {str(e)}")
+            
+            # Convert to numpy array if we have embeddings
+            embeddings_array = np.array(topk_embeddings) if topk_embeddings else None
+            
+            # Generate the first question using the Questioner with entropy analysis
             question_result = questioner.generate_question(
-                video_captions=anchor_captions
+                video_captions=anchor_captions,
+                embeddings=embeddings_array,
+                top_k_videos=topk  # Pass the top-k video IDs for micro-scrutiny
             )
             
-            # Extract the question
+            # Extract the question and record entropy analysis for first round
             response = question_result["question"]
             
+            # 记录第一轮的策略信息
+            strategy = question_result.get('strategy', 'unknown')
+            if strategy == 'ASK':
+                # 判断是macro还是micro
+                entropy_info = question_result.get('entropy_info', {})
+                inter_entropy = entropy_info.get('inter_cluster_entropy', 0)
+                intra_entropy = entropy_info.get('intra_cluster_entropy', 0)
+                alpha_threshold = 0.006
+                beta_threshold = 0.007
+                
+                if inter_entropy > alpha_threshold:
+                    strategy_record = 'ask_macro'
+                else:
+                    strategy_record = 'ask_micro'
+            else:
+                strategy_record = 'refine'
+            
+            record['strategy_1'] = strategy_record
+            
+            # 标记是否已经达到rank 1
+            reached_rank1 = False
+            
             for i in range(args.num_rounds):
-                logger.info(f"Processing round {i+1} of {args.num_rounds}")
+                round_num = i + 1
+                logger.info(f"Processing round {round_num} of {args.num_rounds}")
                 logger.debug(f"Question: {response}")
                 
-                # record the question in our local record
-                record[f'round{i+1}'] = {}
-                record[f'round{i+1}']['question'] = response
-
+                # 记录问题
+                record[f'question_{round_num}'] = response
+                
                 # Process the question and get an answer
-                answer, before_aggr = asyncio.run(vqa.async_ask(response))
-                emb = reranker.get_image_video_text_embeddings(contextual_text=answer)
-                reranker.add_embedding(emb.text_embedding)
-                reranked_topk, target_rank = reranker.rerank(target_vid, video_embs)
-                reranked_top1_caption = ""
+                answer, _ = asyncio.run(vqa.async_ask(response))  # 忽略 before_aggr，直接使用 answer
+                
+                # 记录答案
+                record[f'answer_{round_num}'] = answer
+                
+                # 使用重构器生成新的描述文本
+                reformatted_description = reranker.reformat_dialogue(
+                    question=response,
+                    answer=answer,
+                    max_tokens=300  # 减少token数，确保文本更短
+                )
+                print(f"描述长度: {len(reformatted_description)}")
+                
+                # 记录重述查询
+                record[f'reformat_{round_num}'] = reformatted_description
 
-                for k in topk:
+                # 使用重构后的描述生成Google嵌入
+                emb = reranker.get_image_video_text_embeddings(contextual_text=reformatted_description)
+                reranked_topk, target_rank = reranker.rerank(target_vid, video_embs, emb.text_embedding)
+                
+                # 检查是否达到rank 1
+                if target_rank == 1:
+                    reached_rank1 = True
+                    logger.info(f"Target video {target_vid} reached rank 1 in round {round_num}")
+                
+                # 记录排名（如果已经达到rank 1，后续轮次都记为1）
+                if reached_rank1:
+                    record[f'rank_{round_num}'] = 1
+                    rank_history.append(1)
+                else:
+                    record[f'rank_{round_num}'] = int(target_rank)
+                    rank_history.append(target_rank)
+                
+                # 记录top10视频列表
+                record[f'top10_{round_num}'] = reranked_topk[:10]  # 只取前10个
+                
+                reranked_top1_caption = ""
+                for k in reranked_topk:
                     try:
                         reranked_top1_caption = video_captions[k]
                         break
@@ -387,16 +526,12 @@ def main() -> None:
                     answer=answer,
                     reranked_caption=reranked_top1_caption,
                     target_rank=target_rank,
-                    reranked_topk=reranked_topk
+                    reranked_topk=reranked_topk,
+                    reformatted_description=reformatted_description
                 )
-
-                # record in our local record
-                record[f'round{i+1}']['answer'] = answer
-                record[f'round{i+1}']['answer_before_aggr'] = before_aggr
-                record[f'round{i+1}']['reranked_topk'] = reranked_topk
-                record[f'round{i+1}']['target_rank'] = int(target_rank)
-                rank_history.append(target_rank)
+                
                 logger.info(f"Answer: {answer}")
+                logger.info(f"Reformatted description: {reformatted_description}")
                 logger.info(f"Target rank: {target_rank}")
 
                 # Check if this is the last round based on the loop counter
@@ -404,34 +539,78 @@ def main() -> None:
                 
                 # Generate the next question if not the last round
                 if not is_last_round:
-                    logger.info(f"Generating question for round {i + 2}")
-                    # Generate the next question using the Questioner
-                    # No need to pass conversation history as it's maintained internally
+                    next_round = round_num + 1
+                    logger.info(f"Generating question for round {next_round}")
+                    
+                    # Update embeddings for the new top-k candidates after reranking
+                    topk_embeddings = []
+                    for vid in reranked_topk:
+                        try:
+                            # Find the index of the video in the queries list
+                            vid_index = None
+                            for query_idx, query in enumerate(queries):
+                                # 根据数据集类型处理视频ID
+                                if args.dataset == "mer2024":
+                                    # MER2024: 直接使用name作为video_id，不需要去除扩展名
+                                    if query["video"] == vid:
+                                        vid_index = query_idx
+                                        break
+                                else:
+                                    # MAFW: 需要去除扩展名
+                                    if query["video"].replace(video_ext, "") == vid:
+                                        vid_index = query_idx
+                                        break
+                            
+                            if vid_index is not None:
+                                topk_embeddings.append(video_embs[vid_index])
+                            else:
+                                logger.warning(f"Could not find embeddings for video {vid}")
+                        except Exception as e:
+                            logger.warning(f"Error getting embeddings for video {vid}: {str(e)}")
+                    
+                    # Convert to numpy array if we have embeddings
+                    embeddings_array = np.array(topk_embeddings) if topk_embeddings else None
+                    
+                    # Generate the next question using the Questioner with entropy analysis
                     question_result = questioner.generate_question(
                         video_captions=anchor_captions,
+                        embeddings=embeddings_array,
                         temperature=0.7  # Use higher temperature after first round
                     )
                     response = question_result["question"]
+                    
+                    # 记录下一轮的策略信息
+                    strategy = question_result.get('strategy', 'unknown')
+                    if strategy == 'ASK':
+                        # 判断是macro还是micro
+                        entropy_info = question_result.get('entropy_info', {})
+                        inter_entropy = entropy_info.get('inter_cluster_entropy', 0)
+                        intra_entropy = entropy_info.get('intra_cluster_entropy', 0)
+                        alpha_threshold = 0.006
+                        beta_threshold = 0.007
+                        
+                        if inter_entropy > alpha_threshold:
+                            strategy_record = 'ask_macro'
+                        else:
+                            strategy_record = 'ask_micro'
+                    else:
+                        strategy_record = 'refine'
+                    
+                    record[f'strategy_{next_round}'] = strategy_record
                 else:
-                    logger.info(f"Final round {i + 1} completed, no more questions will be generated")
+                    logger.info(f"Final round {round_num} completed, no more questions will be generated")
 
-            # Export the full conversation log from the questioner
-            conversation_log = questioner.export_conversation_log()
-            
-            # Add round information to the conversation log
-            conversation_log["num_rounds"] = args.num_rounds
-            
-            # Add round information to each conversation entry
-            for i, conv in enumerate(conversation_log["conversations"]):
-                conv["round"] = i + 1
-            
-            record['conversation_log'] = conversation_log
+            # 记录总轮数
+            record['total_rounds'] = len(rank_history) - 1  # 减去初始轮次
             
             # Create the output directory if it doesn't exist
             os.makedirs(base_chat_log_dir, exist_ok=True)
             
-            with open(os.path.join(base_chat_log_dir, f'log_{target_vid}.json'), 'w')as f:
+            # 保存文件并显示保存位置
+            output_file = os.path.join(base_chat_log_dir, f'log_{target_vid}.json')
+            with open(output_file, 'w') as f:
                 json.dump(record, f, ensure_ascii=False, indent=2)
+            logger.info(f"✅ 已保存文件 ({idx+1}/{max_videos}): {output_file}")
             logger.debug(f"Rank history: {rank_history}")
             
             # avg rank
@@ -465,7 +644,6 @@ def main() -> None:
         if args.debug:
             raise
         sys.exit(1)
-    import pdb; pdb.set_trace()
 if __name__ == "__main__":
     # python run_merlin.py --dataset msvd --data_path /path/to/data
     main()
