@@ -1,0 +1,3 @@
+--- 评估结果 (Evaluation Results) ---
+相似度矩阵形状 (Similarity-matrix shape): (332, 332)
+文本->视频检索 (Text-to-Video): R@1: 15.06% - R@5: 35.24% - R@10: 43.37% - Median R: 17.00 - Mean R: 36.03
